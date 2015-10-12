@@ -19,7 +19,7 @@ public:
 	void Initialise(const char *path, const char *textureloc);
 	void CreateShaders();
 	void CreateBuffers();
-	void Draw(mat4 &ProjectionView);
+	void Draw(unsigned int shader, mat4 &ProjectionView);
 	int loadShader(unsigned int type, const char* path);
 	
 private:

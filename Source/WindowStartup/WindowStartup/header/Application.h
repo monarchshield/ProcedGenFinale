@@ -103,14 +103,17 @@ private:
 
 
 
-
+	ShaderLoader* m_shaderloader;
 	FbxLoader* m_EnemyElite;
 	FbxLoader* m_Pyro;
 	FbxLoader* m_Tree;
+	FBXFile* m_fbx;
+
+	ObjLoader* m_objModel;
 
 	Skybox* m_skybox;
 
-	FBXFile* m_fbx;
+
 
 	ParticleEmitter *m_emitter;
 	ObjLoader* ObjModel;

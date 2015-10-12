@@ -69,17 +69,33 @@ Application::Application()
 		glfwTerminate();
 		return;
 	}
-	m_GPUParticles = new GPUParticleEmitter();
-	m_GPUParticles->initialise(100000, 0.1f, 5.0f, 5, 20, 1, 0.1f, vec4(1, 0, 0, 1),vec4(1, 1, 0, 1));
-	m_clearcolour = vec4(1,1,1,1);
-	m_skybox = new Skybox();
+m_shaderloader = new ShaderLoader();
 
 
+#pragma region Particle Emitter
+	//m_GPUParticles = new GPUParticleEmitter();
+	//m_GPUParticles->initialise(100000, 0.1f, 5.0f, 5, 20, 1, 0.1f, vec4(1, 0, 0, 1),vec4(1, 1, 0, 1));
+#pragma endregion
+
+#pragma region FBXFILES + Terrain
 	//m_EnemyElite = new FbxLoader("./Resources/EnemyElite/EnemyElite.fbx",vec4(-25, 0, 0,0));
 	//m_Pyro = new FbxLoader("./Resources/Pyro/pyro.fbx", vec4(25,0,0,0));
-	m_Tree = new FbxLoader("./Resources/Tree/PineTree.fbx", vec4(0,20,0,0));
-	m_terrain = new ProceduralGen();
+	//m_Tree = new FbxLoader("./Resources/Tree/PineTree.fbx", vec4(0,20,0,0));
+	//m_terrain = new ProceduralGen();
+#pragma endregion
 
+#pragma region Skybox
+	//m_skybox = new Skybox();
+#pragma endregion
+
+#pragma region ObjModels
+
+m_objModel = new ObjLoader("./Resources/beretta.obj", "./Resources/REOberetta.png", 2);
+
+#pragma endregion
+
+
+	m_clearcolour = vec4(1,1,1,1);
 
 	Gizmos::create();
 	
@@ -176,8 +192,8 @@ void Application::Update()
 
 
 
-	m_GPUParticles->GUIEndcolourchanger(m_endcolour);
-	m_GPUParticles->GUIStartcolourchanger(m_startcolour);
+	//m_GPUParticles->GUIEndcolourchanger(m_endcolour);
+	//m_GPUParticles->GUIStartcolourchanger(m_startcolour);
 
 
 	camera->update(DeltaTime);
@@ -186,21 +202,26 @@ void Application::Update()
 
 void Application::Draw()
 {
-	
-	m_skybox->Draw(camera);
 
-	#pragma region FBXFILES
+#pragma region OBJ FILES
+	m_objModel->Draw(m_shaderloader->UseFlatLitShader(), camera->getProjectionTransform());
+#pragma endregion
+
+
+#pragma region SkyBox
+	//m_skybox->Draw(camera);
+#pragma endregion
+
+#pragma region FBXFILES
 	//m_Pyro->Draw(camera, m_LightDirection,m_AmbientColour);
 	//m_EnemyElite->Draw(camera, m_LightDirection,m_AmbientColour);
 	//m_Tree->Draw(camera, m_LightDirection, m_AmbientColour);
 	#pragma endregion
 
-
-	m_GPUParticles->Draw(currentTime, camera->getWorldTransform(), camera->getProjectionTransform());
-	
-	
-	m_terrain->Draw(camera, m_LightDirection,m_AmbientColour);
-	
+#pragma region GPUParticles + Terrain
+	//m_GPUParticles->Draw(currentTime, camera->getWorldTransform(), camera->getProjectionTransform());
+	//m_terrain->Draw(camera, m_LightDirection,m_AmbientColour);
+#pragma endregion
 	
 }
 

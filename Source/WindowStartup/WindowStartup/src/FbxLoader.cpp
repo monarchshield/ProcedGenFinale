@@ -16,8 +16,6 @@ FbxLoader::FbxLoader(const char *path, vec4 Position)
 	LightColour = vec3(1,1,1);
 
 	UniqueTexture = false;
-
-	CreateShaders();
 	CreateBuffers();
 }
 
@@ -51,8 +49,6 @@ FbxLoader::FbxLoader(const char *path, const char *textureloc, vec4 Position)
 	}
 
 
-
-	CreateShaders();
 	CreateBuffers();
 
 }
@@ -64,39 +60,6 @@ FbxLoader::~FbxLoader()
 
 }
 
-void FbxLoader::CreateShaders()
-{
-	int success = GL_FALSE;
-
-	//Creating the shaders here
-	unsigned int vs = loadShader(GL_VERTEX_SHADER, "./Shaders/UVtextureFBX.vert");
-	unsigned int fs = loadShader(GL_FRAGMENT_SHADER, "./Shaders/UVtextureFBX.frag");
-
-	m_drawShader = glCreateProgram();
-	glAttachShader(m_drawShader, vs);
-	glAttachShader(m_drawShader, fs);
-	glLinkProgram(m_drawShader);
-
-	glGetProgramiv(m_drawShader, GL_LINK_STATUS, &success);
-
-	if (success == GL_FALSE) 
-	{
-		int infoLogLength = 0;
-		glGetProgramiv(m_drawShader, GL_INFO_LOG_LENGTH, &infoLogLength);
-		char* infoLog = new char[infoLogLength];
-		glGetProgramInfoLog(m_drawShader, infoLogLength, 0, infoLog);
-		
-		printf("Error: Failed to link shader program!\n");
-		printf("%s\n",infoLog);
-		
-		delete[] infoLog;
-	}
-
-	//Removing crappy handles here
-	glDeleteShader(vs);
-	glDeleteShader(fs);
-}
-
 void FbxLoader::CreateBuffers()
 {
 	// create the GL VAO/VBO/IBO data for each mesh
@@ -104,10 +67,11 @@ void FbxLoader::CreateBuffers()
 	{
 
 		FBXMeshNode* mesh = m_fbx->getMeshByIndex(i);
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D,mesh->m_material->textures[FBXMaterial::DiffuseTexture]->handle);
-		
+		if (mesh->m_material != NULL)
+		{
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, mesh->m_material->textures[FBXMaterial::DiffuseTexture]->handle);
+		}
 		// storage for the opengl data in 3 unsigned int
 		unsigned int* glData = new unsigned int[3];
 		// continued next page…
@@ -145,28 +109,28 @@ void FbxLoader::CreateBuffers()
 
 }
 
-void FbxLoader::Draw(FlyCamera *camera, vec3 LightDir, vec3 AmbientColor)
+void FbxLoader::Draw(unsigned int Shader, FlyCamera *camera, vec3 LightDir, vec3 AmbientColor)
 {
 
-	glUseProgram(m_drawShader);
+	glUseProgram(Shader);
 
-	int loc = glGetUniformLocation(m_drawShader, "WorldPosition");
+	int loc = glGetUniformLocation(Shader, "WorldPosition");
 	glUniform4f(loc, m_position.x,m_position.y,m_position.z,0);
 
 
-	 loc = glGetUniformLocation(m_drawShader, "ProjectionView");
+	loc = glGetUniformLocation(Shader, "ProjectionView");
 	glUniformMatrix4fv(loc, 1, GL_FALSE, &(camera->getProjectionTransform()[0][0]));
 
-	loc = glGetUniformLocation(m_drawShader, "CameraPos");
+	loc = glGetUniformLocation(Shader, "CameraPos");
 	glUniform3f(loc, camera->xPosition,camera->yPosition,camera->zPosition);
 
-	loc = glGetUniformLocation(m_drawShader, "LightDir");
+	loc = glGetUniformLocation(Shader, "LightDir");
 	glUniform3f(loc, LightDir.x,LightDir.y,LightDir.z);
 
-	loc = glGetUniformLocation(m_drawShader, "LightColour");
+	loc = glGetUniformLocation(Shader, "LightColour");
 	glUniform3f(loc, LightColour.x,LightColour.y,LightColour.z);
 
-	loc = glGetUniformLocation(m_drawShader, "SpecPow");
+	loc = glGetUniformLocation(Shader, "SpecPow");
 	glUniform1f(loc, 1);
 
 	
@@ -174,7 +138,7 @@ void FbxLoader::Draw(FlyCamera *camera, vec3 LightDir, vec3 AmbientColor)
 	//loc = glGetUniformLocation(m_drawShader, "WorldPosition");
 	//glUniform4f(loc, 20,0,0,1);
 	 
-	loc = glGetUniformLocation(m_drawShader, "AmbientColour"); 
+	loc = glGetUniformLocation(Shader, "AmbientColour");
 	glUniform3f(loc, AmbientColor.x,AmbientColor.y,AmbientColor.z);
 
 	for (unsigned int i = 0; i < m_fbx->getMeshCount(); ++i) 
@@ -191,14 +155,14 @@ void FbxLoader::Draw(FlyCamera *camera, vec3 LightDir, vec3 AmbientColor)
 		{
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D,m_texture);
-			loc = glGetUniformLocation(m_drawShader, "diffuse");
+			loc = glGetUniformLocation(Shader, "diffuse");
 			glUniform1f(loc,0);
 
 		}
 
 		unsigned int* glData = (unsigned int*)mesh->m_userData;
 	
-		loc = glGetUniformLocation(m_drawShader, "global");
+		loc = glGetUniformLocation(Shader, "global");
 		glUniformMatrix4fv(loc,1,GL_FALSE,&(mesh->m_globalTransform)[0][0]);
 	
 		glBindVertexArray(glData[0]);
@@ -209,28 +173,3 @@ void FbxLoader::Draw(FlyCamera *camera, vec3 LightDir, vec3 AmbientColor)
 	}
 }
 
-int FbxLoader::loadShader(unsigned int type, const char* path)
-{
-	FILE* file = fopen(path, "rb");
-
-	if(file == nullptr)
-	{
-		std::cout << "Failed to Find Shader:" << path << "\n";
-		return 0;
-	}
-	//Read the shader source
-	fseek(file,0,SEEK_END);
-	unsigned int length = ftell(file);
-	fseek(file,0,SEEK_SET);
-	char* source = new char[length + 1];
-	memset(source, 0 , length + 1);
-	fread(source,sizeof(char),length,file);
-	fclose(file);
-
-	unsigned int shader = glCreateShader(type);
-	glShaderSource(shader,1, &source, 0);
-	glCompileShader(shader);
-	delete[] source;
-
-	return shader;
-}

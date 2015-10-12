@@ -12,7 +12,7 @@ ObjLoader::ObjLoader(const char *path, const char *textureloc, float Faces)
 	m_ModelIndexCount = 0;
 
 
-	CreateShaders();
+
 	Initialise(path, textureloc);
 	CreateBuffers();
 
@@ -25,16 +25,18 @@ ObjLoader::~ObjLoader()
 }
 
 
-void ObjLoader::Draw(mat4 &ProjectionView)
+void ObjLoader::Draw(unsigned int shader, mat4 &ProjectionView)
 {
-	glUseProgram(m_programID);
+	glUseProgram(shader);
 
 
-	int loc = glGetUniformLocation(m_programID, "ProjectionView");
+
+
+	int loc = glGetUniformLocation(shader, "ProjectionView");
 	glUniformMatrix4fv(loc, 1, GL_FALSE, &(ProjectionView[0][0]));
 	
 	
-	loc = glGetUniformLocation(m_programID, "diffuse");
+	loc = glGetUniformLocation(shader, "diffuse");
 	glUniform1i(loc, 0);
 
 
@@ -43,40 +45,7 @@ void ObjLoader::Draw(mat4 &ProjectionView)
 	glBindVertexArray(0);
 }
 
-void ObjLoader::CreateShaders()
-{
-	//Creating the shaders here
-	unsigned int vs = loadShader(GL_VERTEX_SHADER, "./Shaders/UVtexture.vert");
-	unsigned int fs = loadShader(GL_FRAGMENT_SHADER, "./Shaders/UVtexture.frag");
-	
 
-
-	m_programID = glCreateProgram();
-	glAttachShader(m_programID, vs);
-	glAttachShader(m_programID, fs);
-	glLinkProgram(m_programID);
-
-	//Removing crappy handles here
-	glDeleteShader(vs);
-	glDeleteShader(fs);
-
-	
-	int success = GL_FALSE;
-	glGetProgramiv(m_programID, GL_LINK_STATUS, &success);
-
-
-	if(success == GL_FALSE)
-	{
-		int infoLogLength = 0;
-		glGetShaderiv(m_programID, GL_INFO_LOG_LENGTH, &infoLogLength);
-		char* infoLog = new char[infoLogLength];
-
-		glGetShaderInfoLog(m_programID,infoLogLength,0,infoLog);
-		printf("Error: failed to link shader program!\n");
-		printf("%s\n",infoLog);
-		delete[] infoLog;
-	}
-}
 
 
 void ObjLoader::Initialise(const char *path, const char *textureloc)
@@ -86,12 +55,15 @@ void ObjLoader::Initialise(const char *path, const char *textureloc)
 		data = stbi_load(textureloc,&imageWidth,&imageHeight,&imageFormat, STBI_default);
 	
 		glGenTextures(1, &m_texture);
-		glBindSampler(GL_TEXTURE_2D, m_texture);
+		glBindTexture(GL_TEXTURE_2D, m_texture);
 	
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageWidth, imageHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, m_texture);
+
 		stbi_image_free(data);
 
 	}
