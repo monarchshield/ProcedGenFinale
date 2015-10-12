@@ -90,7 +90,8 @@ m_shaderloader = new ShaderLoader();
 
 #pragma region ObjModels
 
-m_objModel = new ObjLoader("./Resources/beretta.obj", "./Resources/REOberetta.png", 2);
+//m_objModel = new ObjLoader("./Resources/beretta.obj", "./Resources/REOberetta.png", 2);
+m_objModel = new ObjLoader("./Resources/taxi.obj", "./Resources/taxi.png", 3.1f);
 
 #pragma endregion
 

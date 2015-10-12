@@ -103,11 +103,9 @@ void ObjLoader::Initialise(const char *path, const char *textureloc)
 
 			s >> uv.x;
 			s >> uv.y;
-
 			uv.y = uv.y * -1;
 
 			ModelUV.push_back(uv);
-
 		}
 
 		else if(line.substr(0,2) == "f " && Facenum == 2.1)
@@ -159,7 +157,7 @@ void ObjLoader::Initialise(const char *path, const char *textureloc)
 
 		}
 
-
+#pragma region FaceCondition3
 		else if(line.substr(0,2) == "f " && Facenum == 3)
 		{
 			char dummychar;
@@ -178,7 +176,49 @@ void ObjLoader::Initialise(const char *path, const char *textureloc)
 			Elements.push_back(c);
 
 		}
+#pragma endregion
 
+		else if (line.substr(0, 2) == "f " && Facenum == 3.1f)
+		{
+			char dummychar;
+
+			std::istringstream s(line.substr(2));
+			unsigned int a, b, c, aTex, bTex, cTex, aNormal, bNormal, cNormal;
+
+			s >> a; 
+			s >> dummychar; 
+			s >> aNormal;
+			s >> dummychar;
+			s >> aTex;
+			
+			s >> b;
+			s >> dummychar;
+			s >> bNormal;
+			s >> dummychar;
+			s >> bTex;
+			
+			s >> c;
+			s >> dummychar;
+			s >> cNormal;
+			s >> dummychar;
+			s >> cTex;
+
+
+			a--; b--; c--;
+			aTex--; bTex--; cTex--;
+
+			Elements.push_back(a);
+			Elements.push_back(b);
+			Elements.push_back(c);
+
+
+
+			Vertices[a].UV = ModelUV[aTex];
+			Vertices[b].UV = ModelUV[bTex];
+			Vertices[c].UV = ModelUV[cTex];
+
+
+		}
 
 
 		else if( line[0] == '#')
@@ -199,9 +239,9 @@ void ObjLoader::Initialise(const char *path, const char *textureloc)
 		GLushort ib =  Elements[i+1];
 		GLushort ic =  Elements[i+2];
 
-		vec3 normal = glm::normalize(glm::cross(vec3(Vertices[ib].position) - vec3(Vertices[ia].position),
-			vec3(Vertices[ic].position) - vec3(Vertices[ia].position)));
 
+		vec3 normal = glm::normalize(glm::cross(vec3(Vertices[ib].position) - vec3(Vertices[ia].position),vec3(Vertices[ic].position) - vec3(Vertices[ia].position)));
+	
 
 		normals[ia] = normals[ib] = normals[ic] = normal;
 		Vertices[ia].colour = Vertices[ib].colour = Vertices[ic].colour = vec4(normal, 1.0f); 
